@@ -126,7 +126,8 @@ def kl_loss(z_p, logs_q, m_p, logs_p, z_mask):
         logs_p (torch.Tensor): Log variance of p [b, h, t_t].
         z_mask (torch.Tensor): Mask for the latent variables [b, h, t_t].
     """
+    logs_p = logs_p.clamp(min=-10.0)  # Fix: Clamp lower bound only to prevent exponential overflow
     kl = logs_p - logs_q - 0.5 + 0.5 * ((z_p - m_p) ** 2) * torch.exp(-2 * logs_p)
     kl = (kl * z_mask).sum()
-    loss = kl / z_mask.sum()
+    loss = kl / (z_mask.sum() + 1e-8)  # Fix: Add epsilon to prevent division by zero when mask is all zeros
     return loss
