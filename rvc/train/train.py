@@ -659,13 +659,17 @@ def train_and_evaluate(
         consecutive_increases_disc, \
         smoothed_value_gen, \
         smoothed_value_disc, \
-        best_smoothed_loss_gen
+        best_smoothed_loss_gen, \
+        epoch_loss_gen_sum
 
     if epoch == 1:
         lowest_value = {"step": 0, "value": float("inf"), "epoch": 0}
         consecutive_increases_gen = 0
         consecutive_increases_disc = 0
         best_smoothed_loss_gen = float("inf")
+
+    # Initialize epoch loss accumulator
+    epoch_loss_gen_sum = 0.0
 
     net_g, net_d = nets
     optim_g, optim_d = optims
@@ -786,6 +790,9 @@ def train_and_evaluate(
             loss_fm = feature_loss(fmap_r, fmap_g)
             loss_gen, _ = generator_loss(y_d_hat_g)
             loss_gen_all = loss_gen + loss_fm + loss_mel + loss_kl
+
+            # Accumulate loss for epoch average calculation
+            epoch_loss_gen_sum += loss_gen_all.item()
 
             if loss_gen_all < lowest_value["value"]:
                 lowest_value = {
@@ -958,8 +965,8 @@ def train_and_evaluate(
                 consecutive_increases_disc += 1
             else:
                 consecutive_increases_disc = 0
-            # Add the current loss_gen to the history
-            current_loss_gen = float(lowest_value["value"])
+            # Add the current epoch's average loss_gen to the history
+            current_loss_gen = epoch_loss_gen_sum / len(train_loader)
             loss_gen_history.append(current_loss_gen)
             # Update the smoothed loss_gen history
             smoothed_value_gen = update_exponential_moving_average(
