@@ -658,12 +658,14 @@ def train_and_evaluate(
         consecutive_increases_gen, \
         consecutive_increases_disc, \
         smoothed_value_gen, \
-        smoothed_value_disc
+        smoothed_value_disc, \
+        best_smoothed_loss_gen
 
     if epoch == 1:
         lowest_value = {"step": 0, "value": float("inf"), "epoch": 0}
         consecutive_increases_gen = 0
         consecutive_increases_disc = 0
+        best_smoothed_loss_gen = float("inf")
 
     net_g, net_d = nets
     optim_g, optim_d = optims
