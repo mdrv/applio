@@ -38,7 +38,66 @@ from tabs.plugins.plugins import plugins_tab
 from tabs.settings.settings import settings_tab
 from tabs.realtime.realtime import realtime_tab
 
-# Run prerequisites
+# Handle backup/restore
+from rvc.lib.tools.backup_restore import (
+    create_backup,
+    restore_from_backup,
+    has_backup,
+    get_models_dir,
+)
+
+if "--backup" in sys.argv:
+    create_backup()
+    sys.exit(0)
+
+if "--restore" in sys.argv:
+    restore_path = (
+        sys.argv[sys.argv.index("--restore") + 1]
+        if len(sys.argv) > sys.argv.index("--restore") + 1
+        else None
+    )
+    if not restore_path:
+        restore_path = input("Enter path to backup file: ")
+    restore_from_backup(restore_path)
+    print("Restore complete! Launching Applio...\n")
+
+# Check if models exist
+models_dir = get_models_dir()
+models_exist = models_dir.exists() and (
+    any(models_dir.rglob("*.pth")) or any(models_dir.rglob("*.pt"))
+)
+
+if not models_exist:
+    # First time or missing models
+    response = input("Do you have a backup to restore from? (y/n): ").strip().lower()
+    if response == "y":
+        backup_path = input("Enter path to backup file: ").strip()
+        try:
+            restore_from_backup(backup_path)
+            print()
+        except Exception as e:
+            print(f"✗ Restore failed: {e}")
+            print("Proceeding with download...\n")
+    else:
+        print("Downloading prerequisites (this may take a while)...")
+        from core import run_prerequisites_script
+
+        run_prerequisites_script(
+            pretraineds_hifigan=True,
+            models=True,
+            exe=True,
+        )
+        # Ask to backup after first download
+        backup_response = input("\nBackup for offline use? (y/n): ").strip().lower()
+        if backup_response == "y":
+            print()
+            create_backup()
+else:
+    # Models exist, show backup command
+    print("✓ Prerequisites found.")
+    print(f"Tip: Run 'python app.py --backup' to create a backup for offline use\n")
+
+# Run prerequisites script (no-op if already restored)
 from core import run_prerequisites_script
 
 run_prerequisites_script(
