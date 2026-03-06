@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 now_dir = os.getcwd()
 sys.path.append(now_dir)
 
-current_script_directory = os.path.dirname(os.path.realpath(__file__))
+current_script_directory = os.path.dirname(os.path.abspath(__file__))
 logs_path = os.path.join(current_script_directory, "logs")
 
 from rvc.lib.tools.analyzer import analyze_audio
