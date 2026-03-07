@@ -124,9 +124,9 @@ def restore_from_backup(backup_path: str) -> None:
                     # Build absolute destination path
                     # The zip contains paths like "models/embedders/file"
                     # We need to extract to APPLIO_DATA/rvc/models/embedders/file
-                    data_dir = Path(os.environ.get("APPLIO_DATA", ".")).resolve()
+                    data_dir = Path(os.environ.get("APPLIO_DATA", ".")).absolute()
                     rel_path = Path(file)  # e.g., "models/embedders/.gitkeep"
-                    dst_path = (data_dir / "rvc" / rel_path).resolve()
+                    dst_path = data_dir / "rvc" / rel_path
 
                     # Ensure parent directory exists
                     dst_path.parent.mkdir(parents=True, exist_ok=True)
