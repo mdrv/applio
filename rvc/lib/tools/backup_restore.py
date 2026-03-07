@@ -13,7 +13,9 @@ from tqdm import tqdm
 
 def get_models_dir() -> Path:
     """Get the models directory path."""
-    return Path("rvc/models")
+    import os
+
+    return Path(os.environ.get("APPLIO_DATA", ".")) / "rvc/models"
 
 
 def create_backup(output_path: Optional[str] = None) -> str:
