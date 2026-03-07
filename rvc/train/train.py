@@ -272,6 +272,9 @@ def main():
         Args:
             training_file_path (str): The file path of the JSON file containing the training history.
         """
+        global loss_disc_history, smoothed_loss_disc_history
+        global loss_gen_history, smoothed_loss_gen_history, best_smoothed_loss_gen
+
         if overtraining_detector:
             if os.path.exists(training_file_path):
                 (
