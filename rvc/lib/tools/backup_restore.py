@@ -129,7 +129,23 @@ def restore_from_backup(backup_path: str) -> None:
                     dst_path = data_dir / "rvc" / rel_path
 
                     # Ensure parent directory exists
-                    dst_path.parent.mkdir(parents=True, exist_ok=True)
+                    # Need to handle symlinks in parent path - mkdir follows them
+                    parent = dst_path.parent
+                    if not parent.exists():
+                        # Check if any ancestor is a symlink that's blocking us
+                        for ancestor in reversed(list(parent.parents)):
+                            if ancestor.is_symlink():
+                                # Found a symlink in the path - we need to remove it
+                                # and create the actual directory structure
+                                target = ancestor.resolve()
+                                ancestor.unlink()
+                                if target.exists():
+                                    shutil.copytree(target, ancestor, symlinks=False)
+                                else:
+                                    ancestor.mkdir(parents=True, exist_ok=True)
+                                break
+                        # Now create the parent directory
+                        parent.mkdir(parents=True, exist_ok=True)
 
                     # Copy file (don't follow symlinks)
                     if src_path.exists():
