@@ -111,8 +111,8 @@ def restore_from_backup(backup_path: str) -> None:
         ) as pbar:
             for file in file_list:
                 file_size = zf.getinfo(file).file_size
-                # Extract to temp dir first to avoid symlink traversal,
-                # then move to final destination
+                # Extract to temp dir first, then copy to final destination
+                # This avoids zipfile.extract() following symlinks
                 import tempfile
                 import shutil
 
@@ -120,16 +120,24 @@ def restore_from_backup(backup_path: str) -> None:
                     # Extract to temp location
                     zf.extract(file, tmpdir)
                     src_path = Path(tmpdir) / file
-                    # Calculate destination based on models_dir
-                    # The zip contains paths like "rvc/models/embedders/file"
+
+                    # Build absolute destination path
+                    # The zip contains paths like "models/embedders/file"
                     # We need to extract to APPLIO_DATA/rvc/models/embedders/file
-                    rel_path = Path(file)
-                    dst_path = models_dir.parent / rel_path
+                    data_dir = Path(os.environ.get("APPLIO_DATA", ".")).resolve()
+                    rel_path = Path(file)  # e.g., "models/embedders/.gitkeep"
+                    dst_path = (data_dir / "rvc" / rel_path).resolve()
+
                     # Ensure parent directory exists
                     dst_path.parent.mkdir(parents=True, exist_ok=True)
-                    # Move file from temp to final destination
+
+                    # Copy file (don't follow symlinks)
                     if src_path.exists():
-                        shutil.move(str(src_path), str(dst_path))
+                        shutil.copy2(
+                            str(src_path), str(dst_path), follow_symlinks=False
+                        )
+                        os.remove(src_path)
+
                 pbar.update(file_size)
 
     print("✓ Restore complete")
